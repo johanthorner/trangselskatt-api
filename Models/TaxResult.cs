@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace TrangselskattAPI
 {
@@ -6,6 +7,13 @@ namespace TrangselskattAPI
     {
       
         public string Type { get; set; }
+        public List<DateOfPassage> Dates { get; set; }       
+        public Decimal TotalTax { get; set; }
+    }
+    public class DateOfPassage
+    {  
         public DateTime Date { get; set; }
+        public List<DateTime> PassagesThroughCustoms { get; set; }
+        public Decimal Tax { get; set; }
     }
 }
