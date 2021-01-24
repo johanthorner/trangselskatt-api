@@ -8,17 +8,18 @@ namespace TrangselskattAPI.Controllers
     public class TaxCalucaulatorController : ControllerBase
     {     
         private readonly ILogger<TaxCalucaulatorController> _logger;
+        private ITaxCalculationService _taxCalculationService;
 
-        public TaxCalucaulatorController(ILogger<TaxCalucaulatorController> logger)
+        public TaxCalucaulatorController(ILogger<TaxCalucaulatorController> logger, ITaxCalculationService taxCalculationService)
         {
             _logger = logger;
+            _taxCalculationService = taxCalculationService;
         }
 
         [HttpGet]
         public TaxResult Get(TaxRequest request)
-        {     
-            var model = new TaxResult();  
-            return model;
+        {          
+            return _taxCalculationService.CreateTaxResultModel(request); 
         }
     }
 }
