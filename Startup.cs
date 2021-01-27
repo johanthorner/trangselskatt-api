@@ -27,7 +27,7 @@ namespace TrangselskattAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddSingleton<ITaxCalculationService, TaxCalculationService>();
+            services.AddSingleton<ITaxCalculationService, TaxCalculationService>();                 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

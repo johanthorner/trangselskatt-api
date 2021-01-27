@@ -3,20 +3,31 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using System;
+using Microsoft.Extensions.Options;
 
 public class TaxCalculationService : ITaxCalculationService
-{
-    private readonly IConfiguration Configuration;
+{   
     private string[] NonTaxPayingVehicle;
+    private Decimal DayTaxLimit;
+    private IEnumerable<TimeSpanFee> TimeSpans;
 
     public TaxCalculationService(IConfiguration configuration)
-    {
-        Configuration = configuration;
+    {         
+        DayTaxLimit = Decimal.Parse(configuration["DayTaxLimit"]);
         NonTaxPayingVehicle = configuration
             .GetSection("NonTaxPayingVehicle")
             .GetChildren()
             .Select(x => x.Value)
             .ToArray();
+
+        TimeSpans = configuration.GetSection("TimeSpan")
+            .GetChildren()
+            .ToList()
+            .Select(x => new TimeSpanFee{
+                Start = DateTime.Parse(x.GetValue<string>("Start"), System.Globalization.CultureInfo.CurrentCulture),
+                End = DateTime.Parse(x.GetValue<string>("End"), System.Globalization.CultureInfo.CurrentCulture),
+                Fee = decimal.Parse(x.GetValue<string>("Fee"))
+            });
     }
     public TaxResult CreateTaxResultModel(TaxRequest request){
             
@@ -34,6 +45,22 @@ public class TaxCalculationService : ITaxCalculationService
 
     private TaxResult CalculateTaxPerDay(TaxResult result){
        
+        foreach (var date in result.Dates)
+        {                  
+            var groupByHour = date.PassagesThroughCustoms.GroupBy(a => a.Hour);           
+          
+            foreach (var hour in groupByHour)
+            {
+                var hourFee = hour.Select(a => GetFee(a)).OrderByDescending(a => a).First();  
+                date.Tax += hourFee;
+            }      
+           
+            if(date.Tax > DayTaxLimit)
+            {
+                date.Tax = DayTaxLimit;
+            }  
+        }
+
         return result;
     }
 
@@ -68,4 +95,27 @@ public class TaxCalculationService : ITaxCalculationService
 
         return false;
     }
+
+    private decimal GetFee(DateTime date){
+     
+     foreach (var timeSpan in TimeSpans)
+     {       
+         if(IsInTimeSpan(date, timeSpan.Start.TimeOfDay, timeSpan.End.TimeOfDay)){
+             return timeSpan.Fee;
+         }   
+     }    
+
+     return 0;   
+    }
+
+    private bool IsInTimeSpan(DateTime datetime, TimeSpan start, TimeSpan end){
+   
+    TimeSpan now = datetime.TimeOfDay;  
+    if (start < end)
+        return start <= now && now <= end;
+
+    return !(end < now && now < start);
+
+    }
+
 }
