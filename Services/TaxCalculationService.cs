@@ -79,17 +79,10 @@ public class TaxCalculationService : ITaxCalculationService
         
         return (isTaxFreeMonth|| isWeekend || isDayBeforeWeekend);
     }
-
-    private decimal GetFee(DateTime date){
-     
-     foreach (var timeSpan in TimeSpans)
-     {       
-         if(IsInTimeSpan(date, timeSpan.Start.TimeOfDay, timeSpan.End.TimeOfDay)){
-             return timeSpan.Fee;
-         }   
-     }    
-
-     return 0;   
+   
+    private decimal GetFee(DateTime date){   
+ 
+     return TimeSpans.Where(a => IsInTimeSpan(date, a.Start.TimeOfDay, a.End.TimeOfDay)).FirstOrDefault().Fee;   
     }
 
     private bool IsInTimeSpan(DateTime datetime, TimeSpan start, TimeSpan end){
