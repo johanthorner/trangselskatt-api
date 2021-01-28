@@ -19,7 +19,7 @@ namespace TrangselskattAPI.Controllers
         [HttpGet]
         public TaxResult Get(TaxRequest request)
         {          
-            return _taxCalculationService.CreateTaxResultModel(request); 
+            return _taxCalculationService.GetTaxResult(request); 
         }
     }
 }

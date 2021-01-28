@@ -29,42 +29,12 @@ public class TaxCalculationService : ITaxCalculationService
                 Fee = decimal.Parse(x.GetValue<string>("Fee"))
             });
     }
-    public TaxResult CreateTaxResultModel(TaxRequest request){
-            
-        var result = OrderPassagesByDate(request); 
-              
-        if(NonTaxPayingVehicle.Any(a => a == request.VehicleType))
-        {
-            return result;
-        }     
+    public TaxResult GetTaxResult(TaxRequest request){        
 
-        result = CalculateTaxPerDay(result);
-
-        return result;
-    } 
-
-    private TaxResult CalculateTaxPerDay(TaxResult result){
-       
-        foreach (var date in result.Dates)
-        {                  
-            var groupByHour = date.PassagesThroughCustoms.GroupBy(a => a.Hour);           
-          
-            foreach (var hour in groupByHour)
-            {
-                var hourFee = hour.Select(a => GetFee(a)).OrderByDescending(a => a).First();  
-                date.Tax += hourFee;
-            }      
-           
-            if(date.Tax > DayTaxLimit)
-            {
-                date.Tax = DayTaxLimit;
-            }  
-        }
-
-        return result;
-    }
-
-    private TaxResult OrderPassagesByDate(TaxRequest request){
+        return NonTaxPayingVehicle.Any(a => a == request.VehicleType) ? new TaxResult() : CreateTaxResult(request);
+    }      
+   
+    private TaxResult CreateTaxResult(TaxRequest request){
         
         var result = new TaxResult(); 
 
@@ -75,12 +45,31 @@ public class TaxCalculationService : ITaxCalculationService
         new DateOfPassage()
         {
             Date = a.Key,
-            PassagesThroughCustoms = a.ToList()
+            PassagesThroughCustoms = a.ToList(),
+            Tax = GetDayTax(a)
         })
         .ToList();
 
         return result;
     }  
+    private decimal GetDayTax(IGrouping<DateTime, DateTime> groupOfDates){
+        
+        decimal totalTax = 0;
+        var groupByHour = groupOfDates.GroupBy(a => a.Hour);           
+          
+            foreach (var hour in groupByHour)
+            {
+                var hourFee = hour.Select(a => GetFee(a)).OrderByDescending(a => a).First();  
+                totalTax += hourFee;
+            }      
+           
+            if(totalTax > DayTaxLimit)
+            {
+                totalTax = DayTaxLimit;
+            }  
+        
+        return totalTax;
+    }
 
     private bool DateIsTaxFree(DateTime date){
 
@@ -88,12 +77,7 @@ public class TaxCalculationService : ITaxCalculationService
         var isDayBeforeWeekend = (date.DayOfWeek + 1) == DayOfWeek.Saturday;
         var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Saturday;
         
-        if(isTaxFreeMonth|| isWeekend || isDayBeforeWeekend)
-        {
-            return true;
-        }
-
-        return false;
+        return (isTaxFreeMonth|| isWeekend || isDayBeforeWeekend);
     }
 
     private decimal GetFee(DateTime date){
