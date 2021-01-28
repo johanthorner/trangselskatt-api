@@ -111,8 +111,9 @@ public class TaxCalculationService : ITaxCalculationService
     private bool IsInTimeSpan(DateTime datetime, TimeSpan start, TimeSpan end){
    
     TimeSpan now = datetime.TimeOfDay;  
-    if (start < end)
+    if (start < end){       
         return start <= now && now <= end;
+    }       
 
     return !(end < now && now < start);
 
