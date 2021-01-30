@@ -44,11 +44,12 @@ public class TaxCalculationService : ITaxCalculationService
         .Select(a => 
         new DateOfPassage()
         {
-            Date = a.Key,
-            PassagesThroughCustoms = a.ToList(),
+            Date = a.Key.ToString("yyyy/MM/dd"),
+            Occasions = a.Select(a => a.ToString("HH:mm")).ToList(),
             Tax = GetDayTax(a)
         })
         .ToList();
+        result.IsTaxPayingVehicle = true;
 
         return result;
     }  
