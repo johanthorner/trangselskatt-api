@@ -7,20 +7,22 @@ using Microsoft.Extensions.Options;
 
 public class TaxCalculationService : ITaxCalculationService
 {   
-    private string[] NonTaxPayingVehicle;
+    private int TaxFreeMonth;
+    private string[] NonTaxPayingVehicles;
     private Decimal DayTaxLimit;
-    private IEnumerable<TimeSpanFee> TimeSpans;
+    private IEnumerable<TimeSpanFee> FeeTimeSpans;
 
     public TaxCalculationService(IConfiguration configuration)
     {         
         DayTaxLimit = Decimal.Parse(configuration["DayTaxLimit"]);
-        NonTaxPayingVehicle = configuration
+        TaxFreeMonth = int.Parse(configuration["TaxFreeMonth"]);
+        NonTaxPayingVehicles = configuration
             .GetSection("NonTaxPayingVehicle")
             .GetChildren()
             .Select(x => x.Value)
             .ToArray();
 
-        TimeSpans = configuration.GetSection("TimeSpan")
+        FeeTimeSpans = configuration.GetSection("FeeTimeSpans")
             .GetChildren()
             .ToList()
             .Select(x => new TimeSpanFee{
@@ -31,7 +33,7 @@ public class TaxCalculationService : ITaxCalculationService
     }
     public TaxResult GetTaxResult(TaxRequest request){        
 
-        return NonTaxPayingVehicle.Any(a => a == request.VehicleType) ? new TaxResult() : CreateTaxResult(request);
+        return NonTaxPayingVehicles.Any(a => a == request.VehicleType) ? new TaxResult() : CreateTaxResult(request);
     }      
    
     private TaxResult CreateTaxResult(TaxRequest request){
@@ -74,16 +76,16 @@ public class TaxCalculationService : ITaxCalculationService
 
     private bool DateIsTaxFree(DateTime date){
 
-        var isTaxFreeMonth = date.Month == 7;     
+        var isTaxFreeMonth = date.Month == TaxFreeMonth;     
         var isDayBeforeWeekend = (date.DayOfWeek + 1) == DayOfWeek.Saturday;
-        var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Saturday;
+        var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
         
         return (isTaxFreeMonth|| isWeekend || isDayBeforeWeekend);
     }
    
     private decimal GetFee(DateTime date){   
  
-     return TimeSpans.Where(a => IsInTimeSpan(date, a.Start.TimeOfDay, a.End.TimeOfDay)).FirstOrDefault().Fee;   
+     return FeeTimeSpans.Where(a => IsInTimeSpan(date, a.Start.TimeOfDay, a.End.TimeOfDay)).FirstOrDefault().Fee;   
     }
 
     private bool IsInTimeSpan(DateTime datetime, TimeSpan start, TimeSpan end){
