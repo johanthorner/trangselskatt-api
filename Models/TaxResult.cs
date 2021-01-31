@@ -5,6 +5,10 @@ namespace TrangselskattAPI
 {
     public class TaxResult
     {      
+        public TaxResult()
+        {
+            Dates = new List<DateOfPassage>();
+        }
         public bool IsTaxPayingVehicle { get; set; }
         public List<DateOfPassage> Dates { get; set; }    
     }
