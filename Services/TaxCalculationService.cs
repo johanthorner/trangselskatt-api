@@ -58,11 +58,12 @@ public class TaxCalculationService : ITaxCalculationService
     private decimal GetDayTax(IGrouping<DateTime, DateTime> groupOfDates){
         
         decimal totalTax = 0;
+              
         var groupByHour = groupOfDates.GroupBy(a => a.Hour);           
           
             foreach (var hour in groupByHour)
             {
-                var hourFee = hour.Select(a => GetFee(a)).OrderByDescending(a => a).First();  
+                var hourFee = hour.Select(a => GetFee(a.AddSeconds(-a.Second))).OrderByDescending(a => a).First();  
                 totalTax += hourFee;
             }      
            
